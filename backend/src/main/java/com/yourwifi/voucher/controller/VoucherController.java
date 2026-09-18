@@ -27,6 +27,14 @@ public class VoucherController {
         return ResponseEntity.ok(voucherService.redeemVoucher(request));
     }
 
+    @PostMapping("/customer/vouchers/redeem")
+    public ResponseEntity<VoucherRedeemResponse> redeemCustomer(@Valid @RequestBody VoucherRedeemRequest request, Authentication authentication) {
+        String username = authentication != null && authentication.getName() != null && !authentication.getName().isBlank()
+            ? authentication.getName()
+            : request.username();
+        return ResponseEntity.ok(voucherService.redeemVoucher(new VoucherRedeemRequest(request.code(), username)));
+    }
+
     @PostMapping("/vouchers")
     public ResponseEntity<com.yourwifi.voucher.entity.Voucher> create(@Valid @RequestBody CreateVoucherRequest request, Authentication authentication) {
         return ResponseEntity.ok(voucherService.createVoucher(request, authentication.getName()));

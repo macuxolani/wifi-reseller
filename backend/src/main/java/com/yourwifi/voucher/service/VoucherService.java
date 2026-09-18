@@ -1,5 +1,6 @@
 package com.yourwifi.voucher.service;
 
+import com.yourwifi.billing.service.BillingService;
 import com.yourwifi.common.enums.EntitlementSourceType;
 import com.yourwifi.common.enums.VoucherStatus;
 import com.yourwifi.common.exception.ApiException;
@@ -12,7 +13,6 @@ import com.yourwifi.voucher.entity.Voucher;
 import com.yourwifi.voucher.repository.VoucherRepository;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,11 +23,13 @@ public class VoucherService {
 
     private final VoucherRepository voucherRepository;
     private final CustomerRepository customerRepository;
+    private final BillingService billingService;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public VoucherService(VoucherRepository voucherRepository, CustomerRepository customerRepository) {
+    public VoucherService(VoucherRepository voucherRepository, CustomerRepository customerRepository, BillingService billingService) {
         this.voucherRepository = voucherRepository;
         this.customerRepository = customerRepository;
+        this.billingService = billingService;
     }
 
     @Transactional
@@ -52,7 +54,7 @@ public class VoucherService {
         voucher.setActivatedAt(Instant.now());
         voucher.setCustomerId(customer.getId());
 
-        int minutesToAdd = Optional.ofNullable(voucher.getDurationMinutes()).orElse(0);
+        int minutesToAdd = voucher.getDurationMinutes() == null ? 0 : voucher.getDurationMinutes();
         addEntitlement(customer.getId(), voucher.getPackageId(), minutesToAdd, EntitlementSourceType.VOUCHER, voucher.getCode());
 
         voucherRepository.save(voucher);
@@ -60,8 +62,7 @@ public class VoucherService {
     }
 
     public void addEntitlement(UUID customerId, UUID packageId, int minutes, EntitlementSourceType sourceType, String sourceReference) {
-        // This is intentionally lightweight MVP logic; a dedicated entitlement entity can later expand this ledger.
-        // The key production rule is central account balance assignment at a customer level.
+        billingService.createEntitlement(customerId, packageId, minutes, sourceType, sourceReference);
     }
 
     public String generateSecureCode() {

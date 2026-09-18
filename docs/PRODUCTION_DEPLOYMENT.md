@@ -20,7 +20,9 @@ docker compose ps
 curl http://localhost:8080/actuator/health
 ```
 
-The default Compose database URL uses `host.docker.internal` because this development container does not permit sibling-container bridge traffic. In a normal production Docker host, set `DATABASE_URL=jdbc:postgresql://postgres:5432/yourwifi` and remove the host-gateway fallback if direct Compose service networking is available.
+Compose uses the internal `postgres` service by default. For an external managed PostgreSQL instance, set `DATABASE_URL` to its JDBC URL and keep the database credentials in the deployment secret manager.
+
+The frontend is compiled into static assets and served by Nginx. Set `VITE_API_BASE_URL` to the public HTTPS API URL at image build time when the portal and API are hosted on different origins.
 
 ## Operational checks
 

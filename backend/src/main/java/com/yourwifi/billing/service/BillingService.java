@@ -1,21 +1,27 @@
 package com.yourwifi.billing.service;
 
 import com.yourwifi.billing.entity.CustomerEntitlement;
+import com.yourwifi.billing.repository.CustomerEntitlementRepository;
 import com.yourwifi.common.enums.EntitlementSourceType;
 import java.time.Instant;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Service
 public class BillingService {
 
-    private final Map<UUID, Integer> centralBalanceMinutes = new ConcurrentHashMap<>();
-    private final Map<UUID, CustomerEntitlement> activeEntitlements = new ConcurrentHashMap<>();
+    private final CustomerEntitlementRepository entitlementRepository;
 
+    public BillingService(CustomerEntitlementRepository entitlementRepository) {
+        this.entitlementRepository = entitlementRepository;
+    }
+
+    @Transactional
     public CustomerEntitlement createEntitlement(UUID customerId, UUID packageId, int minutes, EntitlementSourceType sourceType, String sourceReference) {
-        int current = centralBalanceMinutes.getOrDefault(customerId, 0);
-        int updated = current + minutes;
-        centralBalanceMinutes.put(customerId, updated);
+        if (minutes <= 0) {
+            throw new IllegalArgumentException("Entitlement duration must be positive.");
+        }
 
         CustomerEntitlement entitlement = new CustomerEntitlement();
         entitlement.setId(UUID.randomUUID());
@@ -27,26 +33,35 @@ public class BillingService {
         entitlement.setSourceReference(sourceReference);
         entitlement.setActivatedAt(Instant.now());
         entitlement.setStatus("ACTIVE");
-        activeEntitlements.put(customerId, entitlement);
-        return entitlement;
+        return entitlementRepository.save(entitlement);
     }
 
+    @Transactional
     public void applySessionUsage(UUID customerId, int minutesUsed) {
-        int current = centralBalanceMinutes.getOrDefault(customerId, 0);
-        int updated = Math.max(0, current - minutesUsed);
-        centralBalanceMinutes.put(customerId, updated);
+        if (minutesUsed <= 0) {
+            return;
+        }
 
-        CustomerEntitlement entitlement = activeEntitlements.get(customerId);
-        if (entitlement != null) {
-            int newRemaining = Math.max(0, entitlement.getRemainingMinutes() - minutesUsed);
-            entitlement.setRemainingMinutes(newRemaining);
-            if (newRemaining == 0) {
+        int remainingUsage = minutesUsed;
+        for (CustomerEntitlement entitlement : entitlementRepository
+            .findByCustomerIdAndStatusOrderByActivatedAtAsc(customerId, "ACTIVE")) {
+            int consumed = Math.min(remainingUsage, entitlement.getRemainingMinutes());
+            entitlement.setRemainingMinutes(entitlement.getRemainingMinutes() - consumed);
+            if (entitlement.getRemainingMinutes() == 0) {
                 entitlement.setStatus("EXPIRED");
+            }
+            entitlementRepository.save(entitlement);
+            remainingUsage -= consumed;
+            if (remainingUsage == 0) {
+                break;
             }
         }
     }
 
     public int getRemainingMinutes(UUID customerId) {
-        return centralBalanceMinutes.getOrDefault(customerId, 0);
+        return entitlementRepository.findByCustomerIdAndStatusOrderByActivatedAtAsc(customerId, "ACTIVE")
+            .stream()
+            .mapToInt(CustomerEntitlement::getRemainingMinutes)
+            .sum();
     }
 }

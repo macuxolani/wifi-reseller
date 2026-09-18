@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.yourwifi.common.enums.UserStatus;
 import com.yourwifi.common.enums.VoucherStatus;
+import com.yourwifi.billing.service.BillingService;
 import com.yourwifi.customer.entity.Customer;
 import com.yourwifi.customer.repository.CustomerRepository;
 import com.yourwifi.voucher.dto.VoucherRedeemRequest;
@@ -30,6 +31,9 @@ class VoucherServiceTest {
 
     @Mock
     private CustomerRepository customerRepository;
+
+    @Mock
+    private BillingService billingService;
 
     @InjectMocks
     private VoucherService voucherService;

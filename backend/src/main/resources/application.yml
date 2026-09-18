@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/yourwifi}
     username: ${DATABASE_USERNAME:yourwifi}
-    password: ${DATABASE_PASSWORD:yourwifi}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -21,13 +21,13 @@ spring:
     time-zone: Africa/Johannesburg
   security:
     user:
-      password: ${APP_ADMIN_PASSWORD:changeit}
+      password: ${APP_ADMIN_PASSWORD}
 
 server:
   port: ${SERVER_PORT:8080}
 
 jwt:
-  secret: ${JWT_SECRET:change-me-in-production}
+  secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
 
@@ -55,6 +55,6 @@ app:
 logging:
   level:
     root: INFO
-    com.yourwifi: DEBUG
+    com.yourwifi: INFO
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'

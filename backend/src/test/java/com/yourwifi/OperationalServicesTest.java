@@ -10,6 +10,9 @@ import com.yourwifi.payment.dto.PaymentResponse;
 import com.yourwifi.payment.entity.Payment;
 import com.yourwifi.payment.repository.PaymentRepository;
 import com.yourwifi.payment.service.PaymentService;
+import com.yourwifi.packageapp.entity.Package;
+import com.yourwifi.packageapp.repository.PackageRepository;
+import com.yourwifi.common.enums.PackageStatus;
 import com.yourwifi.reporting.dto.ReportSummaryDto;
 import com.yourwifi.reporting.service.ReportingService;
 import com.yourwifi.support.dto.CreateTicketRequest;
@@ -19,6 +22,7 @@ import com.yourwifi.support.service.SupportTicketService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +34,9 @@ class OperationalServicesTest {
 
     @Mock
     private PaymentRepository paymentRepository;
+
+    @Mock
+    private PackageRepository packageRepository;
 
     @Mock
     private SupportTicketRepository supportTicketRepository;
@@ -47,9 +54,17 @@ class OperationalServicesTest {
     void paymentServiceCreatesPaymentRecord() {
         when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        UUID packageId = UUID.randomUUID();
+        Package packageEntity = new Package();
+        packageEntity.setId(packageId);
+        packageEntity.setPrice(new BigDecimal("120.00"));
+        packageEntity.setCurrency("ZAR");
+        packageEntity.setStatus(PackageStatus.ACTIVE);
+        when(packageRepository.findById(packageId)).thenReturn(Optional.of(packageEntity));
+
         PaymentResponse response = paymentService.createPayment(new CreatePaymentRequest(
             UUID.randomUUID(),
-            UUID.randomUUID(),
+            packageId,
             new BigDecimal("120.00"),
             "ZAR",
             "MPESA"
