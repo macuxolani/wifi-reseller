@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: yourwifi-control-centre
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/yourwifi}
+    username: ${DATABASE_USERNAME:yourwifi}
+    password: ${DATABASE_PASSWORD:yourwifi}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    time-zone: Africa/Johannesburg
+  security:
+    user:
+      password: ${APP_ADMIN_PASSWORD:changeit}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+jwt:
+  secret: ${JWT_SECRET:change-me-in-production}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  network:
+    radius-server: ${RADIUS_SERVER:radius.yourwifi.example}
+    radius-authentication-port: ${RADIUS_AUTHENTICATION_PORT:1812}
+    radius-accounting-port: ${RADIUS_ACCOUNTING_PORT:1813}
+    captive-portal-url: ${CAPTIVE_PORTAL_URL:http://localhost:5173}
+  rate-limit:
+    enabled: true
+    requests-per-minute: 120
+
+logging:
+  level:
+    root: INFO
+    com.yourwifi: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'

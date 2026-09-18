@@ -1,0 +1,8 @@
+ALTER TABLE packages
+    ALTER COLUMN currency TYPE VARCHAR(3);
+
+ALTER TABLE payments
+    ALTER COLUMN currency TYPE VARCHAR(3);
+
+ALTER TABLE support_tickets
+    ADD COLUMN IF NOT EXISTS priority VARCHAR(32);
